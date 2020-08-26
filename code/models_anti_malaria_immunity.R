@@ -1,6 +1,8 @@
 
 library(mgcv)
+library(tidyverse)
 
+setwd("~/projects/immunity/")
 dat<-read.csv("data/data_PRISM.csv")
 
 ### The individual (uid_f) and household (hhid_f) variables need to be factors
@@ -52,3 +54,4 @@ pred.mat_s_se<-matrix(pred.mod[[2]], ncol=40)
 
 save(pred.mat_s, file="output/malaria/pred.mat_mal_mod2.Rdata")
 save(pred.mat_s_se, file="output/malaria/pred.mat_mal_mod2_se.Rdata") 
+

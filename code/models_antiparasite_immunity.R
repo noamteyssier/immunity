@@ -1,5 +1,6 @@
 
 library(mgcv)
+library(tidyverse)
 
 
 dat<-read.csv("data/data_PRISM.csv")
@@ -52,3 +53,41 @@ pred.mat_s_se<-matrix(pred.mod[[2]], ncol=40)
 save(pred.mat_s, file="output/parasite/pred.mat_s.Rdata")
 save(pred.mat_s_se, file="output/parasite/pred.mat_pars_se.Rdata")
  
+# convert to dataframe
+uid_list <- c()
+uid_scores <- c()
+for (i in names(mod_pars_2$coefficients)){
+  if (grepl('uid', i)){
+    uid_list <- c(uid_list, i)
+    uid_scores <- c(uid_scores, mod_pars_2$coefficients[[i]])
+  }
+}
+uid_list
+uid_scores
+re_coeffs <- data.frame(
+  uid_f = levels(dat$uid_f),
+  antiparasite_re = uid_scores
+)
+
+random_effects <- tibble(re_coeffs) %>% 
+  left_join(dat)
+write_csv(random_effects, "antiparasite_re.csv")
+
+get_uid_coef <- function(mod){
+  uid_scores <- c()
+  for (i in names(mod_pars_2$coefficients)){
+    if (grepl('uid', i)){
+      uid_scores <- c(uid_scores, mod$coefficients[[i]])
+    }
+  }
+  uid_scores
+}
+
+models <- c(mod_fev_2, mod_pars_2, mod_mal_2)
+random_effects <- tibble(
+  uid_f = levels(dat$uid_f),
+  antidisease_re = get_uid_coef(mod_fev_2),
+  antiparasite_re = get_uid_coef(mod_pars_2),
+  antimalaria_re = get_uid_coef(mod_mal_2)
+)
+random_effects

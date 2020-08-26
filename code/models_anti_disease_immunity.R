@@ -1,5 +1,7 @@
-
 library(mgcv)
+library(tidyverse)
+
+setwd("projects/immunity/")
 
 dat<-read.csv("data/data_PRISM.csv")
 
@@ -50,7 +52,13 @@ eir.seq<-10^seq(log(1.4,10), log(350,10), length.out=40)
 
 for( i in 1:40) {
 print(i)
-new.dat<-data.frame(age=rep(seq(.5, 11, length.out=40), 40), log_parsdens=c(matrix(rep(seq(1,5, length.out=40), 40), ncol=40, byrow=T)),  eir_geom3=rep(eir.seq[i],1600), uid_f=rep("3357", 1600), hhid_f=rep("143009503", 1600))
+new.dat<-data.frame(
+  age=rep(seq(.5, 11, length.out=40), 40), 
+  log_parsdens=c(matrix(rep(seq(1,5, length.out=40), 40), ncol=40, byrow=T)),  
+  eir_geom3=rep(eir.seq[i],1600), 
+  uid_f=rep("3357", 1600), 
+  hhid_f=rep("143009503", 1600)
+  )
 
 pred.i <- predict(mod_fev_2, newdata=new.dat , se.fit=T)
 arr.mat[,,i]<-pred.i[[1]]
@@ -62,3 +70,22 @@ save(arr.mat, file="output/fever/arr.mat_fever.Rdata")
 save(arr.var, file="output/fever/arr.var.Rdata")
 
 
+# convert to dataframe
+uid_list <- c()
+uid_scores <- c()
+for (i in names(mod_fev_2$coefficients)){
+  if (grepl('uid', i)){
+    uid_list <- c(uid_list, i)
+    uid_scores <- c(uid_scores, mod_fev_2$coefficients[[i]])
+  }
+}
+uid_list
+uid_scores
+re_coeffs <- data.frame(
+  uid_f = levels(dat$uid_f),
+  antidisease_re = uid_scores
+)
+
+random_effects <- tibble(re_coeffs) %>% 
+  left_join(dat)
+write_csv(random_effects, "antidisease_re.csv")
